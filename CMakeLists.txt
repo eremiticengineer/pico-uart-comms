@@ -1,0 +1,69 @@
+cmake_minimum_required(VERSION 3.13)
+
+set(PROJECT picouartapitest)
+set(PROJECT_SENDER picouartapitestsender)
+set(PROJECT_RECEIVER picouartapitestreceiver)
+
+set(PICO_BOARD pico2 CACHE STRING "Board type")
+
+include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+
+project(${PROJECT} C CXX ASM)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 23)
+
+pico_sdk_init()
+
+message(STATUS "PICO_PLATFORM=${PICO_PLATFORM}")
+
+set(FREERTOS_KERNEL_PATH
+    ${CMAKE_CURRENT_LIST_DIR}/lib/FreeRTOS-Kernel
+)
+
+include(
+    ${FREERTOS_KERNEL_PATH}/portable/ThirdParty/GCC/RP2040/FreeRTOS_Kernel_import.cmake
+)
+
+# ---------------------------------------------------------
+# UART sender
+# ---------------------------------------------------------
+add_executable(${PROJECT_SENDER}
+  src/pico-uart-api-test-sender.cpp
+)
+
+target_include_directories(${PROJECT_SENDER} PUBLIC
+  include/
+)
+
+target_link_libraries(${PROJECT_SENDER}
+    pico_stdlib
+    hardware_uart
+    FreeRTOS-Kernel-Heap4
+)
+
+pico_enable_stdio_usb(${PROJECT_SENDER} 1)
+pico_enable_stdio_uart(${PROJECT_SENDER} 0)
+pico_add_extra_outputs(${PROJECT_SENDER})
+
+# ---------------------------------------------------------
+# UART receiver
+# ---------------------------------------------------------
+add_executable(${PROJECT_RECEIVER}
+  src/pico-uart-api-test-receiver.cpp
+)
+
+target_include_directories(${PROJECT_RECEIVER} PUBLIC
+  include/
+)
+
+target_link_libraries(${PROJECT_RECEIVER}
+    pico_stdlib
+    hardware_uart
+    FreeRTOS-Kernel-Heap4
+)
+
+pico_enable_stdio_usb(${PROJECT_RECEIVER} 1)
+pico_enable_stdio_uart(${PROJECT_RECEIVER} 0)
+pico_add_extra_outputs(${PROJECT_RECEIVER})
+
