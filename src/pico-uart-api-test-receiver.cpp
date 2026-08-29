@@ -71,27 +71,24 @@ void init_uart() {
 }
 
 void process_uart() {
-  uint8_t byte;
-  while (uart_read_byte(&byte)) {
-    printf("received: %s\n", message_buffer);
-    // printf("String length: %d\n", message_index);
-    // minicom doesn't send \n 0x0A, it send \r 0x0D
-    //if (byte == '\n' || byte == '\r') {
-    if (byte == MESSAGE_END_MARKER) {
-      message_buffer[message_index] = '\0';
-      message_index = 0;
-      printf("received: %s\n", uart_buffer);
+    uint8_t byte;
+
+    while (uart_read_byte(&byte)) {
+        if (byte == MESSAGE_END_MARKER) {
+            message_buffer[message_index] = '\0';
+            printf("received: %s\n", message_buffer);
+            message_index = 0;
+        }
+        else {
+            if (message_index < MESSAGE_BUFFER_SIZE - 1) {
+                message_buffer[message_index++] = static_cast<char>(byte);
+            }
+            else {
+                // Buffer overflow - discard current message
+                message_index = 0;
+            }
+        }
     }
-    else {
-      if (message_index < MESSAGE_BUFFER_SIZE - 1) {
-          message_buffer[message_index++] = byte;
-      }
-      else {
-          // Buffer overflow - reset message
-          message_index = 0;
-      }
-    }
-  }
 }
 
 void uart_receive_task(__unused void *params) {
