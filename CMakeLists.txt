@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 
-set(PROJECT picouartapitest)
-set(PROJECT_SENDER picouartapitestsender)
-set(PROJECT_RECEIVER picouartapitestreceiver)
+set(PROJECT pico_uart_api_test)
+set(PROJECT_SENDER pico_uart_api_test_sender)
+set(PROJECT_RECEIVER pico_uart_api_test_receiver)
 
 set(PICO_BOARD pico2 CACHE STRING "Board type")
 
