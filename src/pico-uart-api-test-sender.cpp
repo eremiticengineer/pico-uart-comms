@@ -11,6 +11,8 @@
 
 #define UART_SEND_TASK_PRIORITY (tskIDLE_PRIORITY + 2UL)
 
+#define MESSAGE_END_MARKER '#'
+
 SemaphoreHandle_t uart_mutex;
 
 namespace uart_config {
@@ -21,7 +23,7 @@ namespace uart_config {
 }
 
 void uart_send_task(__unused void *params) {
-    std::string commsString = "comms data from pico#";
+    std::string commsString = "comms data from pico" + MESSAGE_END_MARKER;
     while (true) {
         if (xSemaphoreTake(uart_mutex, pdMS_TO_TICKS(100))) {
             uart_write_blocking(

@@ -8,12 +8,10 @@
 
 #define UART_RECEIVE_TASK_PRIORITY (tskIDLE_PRIORITY + 2UL)
 
-#define UART_ID uart0
-#define BAUD_RATE 115200
-#define UART_TX_PIN 0
-#define UART_RX_PIN 1
 #define UART_BUFFER_SIZE 256
 #define MESSAGE_BUFFER_SIZE 256
+
+#define MESSAGE_END_MARKER '#'
 
 SemaphoreHandle_t uart_mutex;
 
@@ -24,6 +22,13 @@ volatile uint16_t read_index = 0;
 uint16_t message_index = 0;
 uint8_t message_buffer[MESSAGE_BUFFER_SIZE];
 
+namespace uart_config {
+    inline uart_inst_t* const UART_NUM = uart0;
+    inline constexpr uint BAUD = 115200;
+    inline constexpr uint TX = 0;
+    inline constexpr uint RX = 1;
+}
+
 // Call this from UART RX interrupt or polling when a byte arrives
 void uart_receive_byte(uint8_t byte) {
   ring_buffer[write_index] = byte;
@@ -31,8 +36,8 @@ void uart_receive_byte(uint8_t byte) {
 }
 
 void on_uart_rx() {
-  while (uart_is_readable(UART_ID)) {
-      char c = uart_getc(UART_ID);
+  while (uart_is_readable(uart_config::UART_NUM)) {
+      char c = uart_getc(uart_config::UART_NUM);
       uart_receive_byte(c);
   }
 }
@@ -55,12 +60,12 @@ int uart_read_byte(uint8_t* byte) {
 }
 
 void init_uart() {
-  uart_init(UART_ID, BAUD_RATE);
-  gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
-  gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
+  uart_init(uart_config::UART_NUM, uart_config::BAUD);
+  gpio_set_function(uart_config::TX, GPIO_FUNC_UART);
+  gpio_set_function(uart_config::RX, GPIO_FUNC_UART);
 
   // Enable UART RX interrupt
-  uart_set_irq_enables(UART_ID, true, false);  // RX only
+  uart_set_irq_enables(uart_config::UART_NUM, true, false);  // RX only
   irq_set_exclusive_handler(UART0_IRQ, on_uart_rx);
   irq_set_enabled(UART0_IRQ, true);
 }
@@ -72,7 +77,7 @@ void process_uart() {
     // printf("String length: %d\n", message_index);
     // minicom doesn't send \n 0x0A, it send \r 0x0D
     //if (byte == '\n' || byte == '\r') {
-    if (byte == '!') {
+    if (byte == MESSAGE_END_MARKER) {
       message_buffer[message_index] = '\0';
       message_index = 0;
       printf("received: %s\n", uart_buffer);
