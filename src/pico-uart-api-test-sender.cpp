@@ -23,7 +23,8 @@ namespace uart_config {
 }
 
 void uart_send_task(__unused void *params) {
-    std::string commsString = "comms data from pico" + MESSAGE_END_MARKER;
+    std::string commsString = "comms data from pico";
+    commsString += MESSAGE_END_MARKER;
     while (true) {
         if (xSemaphoreTake(uart_mutex, pdMS_TO_TICKS(100))) {
             uart_write_blocking(
@@ -31,6 +32,9 @@ void uart_send_task(__unused void *params) {
                 reinterpret_cast<const uint8_t *>(commsString.data()),
                 commsString.size()
             );
+
+            printf("wrote '%s', length=%zu\n", commsString.c_str(), commsString.size());
+
             xSemaphoreGive(uart_mutex);
         }
         vTaskDelay(pdMS_TO_TICKS(1000));
