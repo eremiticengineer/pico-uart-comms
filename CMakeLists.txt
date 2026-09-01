@@ -1,10 +1,16 @@
 cmake_minimum_required(VERSION 3.13)
 
-set(PROJECT pico_uart_api_test)
-set(PROJECT_SENDER pico_uart_api_test_sender)
-set(PROJECT_RECEIVER pico_uart_api_test_receiver)
+if(DEVICE STREQUAL "seeed_xiao_rp2040")
+    set(PICO_BOARD pico CACHE STRING "Board type" FORCE)
+elseif(DEVICE STREQUAL "pico2")
+    set(PICO_BOARD pico2 CACHE STRING "Board type" FORCE)
+else()
+    message(FATAL_ERROR "Unknown DEVICE='${DEVICE}'. Use pico2 or xiao.")
+endif()
 
-set(PICO_BOARD pico2 CACHE STRING "Board type")
+set(PROJECT pico_uart_comms_test)
+set(PROJECT_SENDER pico_uart_comms_test_sender)
+set(PROJECT_RECEIVER pico_uart_comms_test_receiver)
 
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
@@ -15,6 +21,8 @@ set(CMAKE_CXX_STANDARD 23)
 
 pico_sdk_init()
 
+message(STATUS "DEVICE=${DEVICE}")
+message(STATUS "PICO_BOARD=${PICO_BOARD}")
 message(STATUS "PICO_PLATFORM=${PICO_PLATFORM}")
 
 set(FREERTOS_KERNEL_PATH
@@ -38,6 +46,10 @@ target_include_directories(${PROJECT_SENDER} PUBLIC
   src/UartComms/
 )
 
+target_compile_definitions(${PROJECT_SENDER} PRIVATE
+    DEVICE_${DEVICE}
+)
+
 target_link_libraries(${PROJECT_SENDER}
     pico_stdlib
     hardware_uart
@@ -59,6 +71,10 @@ add_executable(${PROJECT_RECEIVER}
 target_include_directories(${PROJECT_RECEIVER} PUBLIC
   include/
   src/UartComms/
+)
+
+target_compile_definitions(${PROJECT_RECEIVER} PRIVATE
+    DEVICE_${DEVICE}
 )
 
 target_link_libraries(${PROJECT_RECEIVER}
