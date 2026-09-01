@@ -30,10 +30,12 @@ include(
 # ---------------------------------------------------------
 add_executable(${PROJECT_SENDER}
   src/pico-uart-api-test-sender.cpp
+  src/UartComms/UartComms.cpp
 )
 
 target_include_directories(${PROJECT_SENDER} PUBLIC
   include/
+  src/UartComms/
 )
 
 target_link_libraries(${PROJECT_SENDER}
@@ -51,10 +53,12 @@ pico_add_extra_outputs(${PROJECT_SENDER})
 # ---------------------------------------------------------
 add_executable(${PROJECT_RECEIVER}
   src/pico-uart-api-test-receiver.cpp
+  src/UartComms/UartComms.cpp
 )
 
 target_include_directories(${PROJECT_RECEIVER} PUBLIC
   include/
+  src/UartComms/
 )
 
 target_link_libraries(${PROJECT_RECEIVER}
