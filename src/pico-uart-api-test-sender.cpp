@@ -15,12 +15,24 @@
 
 SemaphoreHandle_t uart_mutex;
 
+#ifdef DEVICE_seeed_xiao_rp2040
+// Seeed Xaio rp2040
 namespace uart_config {
     inline uart_inst_t* const UART_NUM = uart0;
     inline constexpr uint BAUD = 115200;
     inline constexpr uint TX = 0;
     inline constexpr uint RX = 1;
 }
+#elif defined(DEVICE_pico2)
+namespace uart_config {
+    inline uart_inst_t* const UART_NUM = uart0;
+    inline constexpr uint BAUD = 115200;
+    inline constexpr uint TX = 0;
+    inline constexpr uint RX = 1;
+}
+#else
+#error "No supported DEVICE defined"
+#endif
 
 void uart_send_task(void* params) {
     UartComms *pUartComms = static_cast<UartComms *>(params);
