@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.13)
 
+set(LIBRARY pico_uart_comms)
+set(PROJECT_SENDER pico_uart_comms_test_sender)
+set(PROJECT_RECEIVER pico_uart_comms_test_receiver)
+
 if(DEVICE STREQUAL "seeed_xiao_rp2040")
     set(PICO_BOARD pico CACHE STRING "Board type" FORCE)
 elseif(DEVICE STREQUAL "pico2")
@@ -8,13 +12,10 @@ else()
     message(FATAL_ERROR "Unknown DEVICE='${DEVICE}'. Use pico2 or xiao.")
 endif()
 
-set(PROJECT pico_uart_comms_test)
-set(PROJECT_SENDER pico_uart_comms_test_sender)
-set(PROJECT_RECEIVER pico_uart_comms_test_receiver)
-
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
-project(${PROJECT} C CXX ASM)
+project(${PROJECT_SENDER} C CXX ASM)
+project(${PROJECT_RECEIVER} C CXX ASM)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 23)
@@ -25,65 +26,83 @@ message(STATUS "DEVICE=${DEVICE}")
 message(STATUS "PICO_BOARD=${PICO_BOARD}")
 message(STATUS "PICO_PLATFORM=${PICO_PLATFORM}")
 
-set(FREERTOS_KERNEL_PATH
-    ${CMAKE_CURRENT_LIST_DIR}/lib/FreeRTOS-Kernel
+# ---------------------------------------------------------
+# Library
+# ---------------------------------------------------------
+add_library(${LIBRARY}
+    src/UartComms.cpp
 )
 
-include(
-    ${FREERTOS_KERNEL_PATH}/portable/ThirdParty/GCC/RP2040/FreeRTOS_Kernel_import.cmake
+target_include_directories(${LIBRARY} PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/src
 )
+
+target_link_libraries(${LIBRARY} PUBLIC
+    pico_stdlib
+    hardware_uart
+)
+
+# ---------------------------------------------------------
+# Standalone tests
+# ---------------------------------------------------------
 
 # ---------------------------------------------------------
 # UART sender
 # ---------------------------------------------------------
-add_executable(${PROJECT_SENDER}
-  src/pico-uart-api-test-sender.cpp
-  src/UartComms/UartComms.cpp
-)
+if(PROJECT_IS_TOP_LEVEL)
+    set(FREERTOS_KERNEL_PATH
+        ${CMAKE_CURRENT_LIST_DIR}/lib/FreeRTOS-Kernel
+    )
 
-target_include_directories(${PROJECT_SENDER} PUBLIC
-  include/
-  src/UartComms/
-)
+    include(
+        ${FREERTOS_KERNEL_PATH}/portable/ThirdParty/GCC/RP2040/FreeRTOS_Kernel_import.cmake
+    )
 
-target_compile_definitions(${PROJECT_SENDER} PRIVATE
-    DEVICE_${DEVICE}
-)
+    add_executable(${PROJECT_SENDER}
+        examples/pico-uart-api-test-sender.cpp
+    )
 
-target_link_libraries(${PROJECT_SENDER}
-    pico_stdlib
-    hardware_uart
-    FreeRTOS-Kernel-Heap4
-)
+    target_include_directories(${PROJECT_SENDER} PUBLIC
+        include/
+    )
 
-pico_enable_stdio_usb(${PROJECT_SENDER} 1)
-pico_enable_stdio_uart(${PROJECT_SENDER} 0)
-pico_add_extra_outputs(${PROJECT_SENDER})
+    target_compile_definitions(${PROJECT_SENDER} PRIVATE
+        DEVICE_${DEVICE}
+    )
 
-# ---------------------------------------------------------
-# UART receiver
-# ---------------------------------------------------------
-add_executable(${PROJECT_RECEIVER}
-  src/pico-uart-api-test-receiver.cpp
-  src/UartComms/UartComms.cpp
-)
+    target_link_libraries(${PROJECT_SENDER}
+        pico_stdlib
+        FreeRTOS-Kernel-Heap4
+        ${LIBRARY}
+    )
 
-target_include_directories(${PROJECT_RECEIVER} PUBLIC
-  include/
-  src/UartComms/
-)
+    pico_enable_stdio_usb(${PROJECT_SENDER} 1)
+    pico_enable_stdio_uart(${PROJECT_SENDER} 0)
+    pico_add_extra_outputs(${PROJECT_SENDER})
 
-target_compile_definitions(${PROJECT_RECEIVER} PRIVATE
-    DEVICE_${DEVICE}
-)
+    # ---------------------------------------------------------
+    # UART receiver
+    # ---------------------------------------------------------
+    add_executable(${PROJECT_RECEIVER}
+        examples/pico-uart-api-test-receiver.cpp
+    )
 
-target_link_libraries(${PROJECT_RECEIVER}
-    pico_stdlib
-    hardware_uart
-    FreeRTOS-Kernel-Heap4
-)
+    target_include_directories(${PROJECT_RECEIVER} PUBLIC
+        include/
+    )
 
-pico_enable_stdio_usb(${PROJECT_RECEIVER} 1)
-pico_enable_stdio_uart(${PROJECT_RECEIVER} 0)
-pico_add_extra_outputs(${PROJECT_RECEIVER})
+    target_compile_definitions(${PROJECT_RECEIVER} PRIVATE
+        DEVICE_${DEVICE}
+    )
+
+    target_link_libraries(${PROJECT_RECEIVER}
+        pico_stdlib
+        FreeRTOS-Kernel-Heap4
+        ${LIBRARY}
+    )
+
+    pico_enable_stdio_usb(${PROJECT_RECEIVER} 1)
+    pico_enable_stdio_uart(${PROJECT_RECEIVER} 0)
+    pico_add_extra_outputs(${PROJECT_RECEIVER})
+endif()
 

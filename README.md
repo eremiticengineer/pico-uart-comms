@@ -7,7 +7,7 @@ This is a simple project to send data from one pico to another over UART. It's a
 Clone the project with FreeRTOS submodules to get the pico functionality:
 
 ```
-git clone --recurse-submodules https://github.com/eremiticengineer/pico-uart-comms-test
+git clone --recurse-submodules https://github.com/eremiticengineer/pico-uart-comms
 ```
 
 If you cloned without recursing submodules:
