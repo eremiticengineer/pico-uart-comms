@@ -1,22 +1,50 @@
 cmake_minimum_required(VERSION 3.13)
 
 set(LIBRARY pico_uart_comms)
-set(PROJECT_SENDER pico_uart_comms_test_sender)
-set(PROJECT_RECEIVER pico_uart_comms_test_receiver)
 
-include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+# ---------------------------------------------------------
+# Are we being built directly or as a submodule?
+# ---------------------------------------------------------
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    set(PICO_UART_COMMS_STANDALONE TRUE)
+else()
+    set(PICO_UART_COMMS_STANDALONE FALSE)
+endif()
 
-project(${PROJECT_SENDER} C CXX ASM)
-project(${PROJECT_RECEIVER} C CXX ASM)
+# ---------------------------------------------------------
+# Standalone project setup
+# ---------------------------------------------------------
+if(PICO_UART_COMMS_STANDALONE)
 
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_CXX_STANDARD 23)
+    set(PROJECT_SENDER pico_uart_comms_test_sender)
+    set(PROJECT_RECEIVER pico_uart_comms_test_receiver)
 
-pico_sdk_init()
+    if(DEVICE STREQUAL "seeed_xiao_rp2040")
+        set(PICO_BOARD seeed_xiao_rp2040 CACHE STRING "Board type" FORCE)
+    elseif(DEVICE STREQUAL "pico")
+        set(PICO_BOARD pico CACHE STRING "Board type" FORCE)
+    elseif(DEVICE STREQUAL "pico2")
+        set(PICO_BOARD pico2 CACHE STRING "Board type" FORCE)
+    else()
+        message(FATAL_ERROR
+            "Unknown DEVICE='${DEVICE}'. Use pico, pico2 or seeed_xiao_rp2040."
+        )
+    endif()
 
-message(STATUS "DEVICE=${DEVICE}")
-message(STATUS "PICO_BOARD=${PICO_BOARD}")
-message(STATUS "PICO_PLATFORM=${PICO_PLATFORM}")
+    include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+
+    project(${LIBRARY} C CXX ASM)
+
+    set(CMAKE_C_STANDARD 11)
+    set(CMAKE_CXX_STANDARD 23)
+
+    pico_sdk_init()
+
+    message(STATUS "DEVICE=${DEVICE}")
+    message(STATUS "PICO_BOARD=${PICO_BOARD}")
+    message(STATUS "PICO_PLATFORM=${PICO_PLATFORM}")
+
+endif()
 
 # ---------------------------------------------------------
 # Library
@@ -35,21 +63,12 @@ target_link_libraries(${LIBRARY} PUBLIC
 )
 
 # ---------------------------------------------------------
-# Standalone tests
+# Standalone examples
 # ---------------------------------------------------------
-
 # ---------------------------------------------------------
 # UART sender
 # ---------------------------------------------------------
-if(PROJECT_IS_TOP_LEVEL)
-  if(DEVICE STREQUAL "seeed_xiao_rp2040")
-      set(PICO_BOARD pico CACHE STRING "Board type" FORCE)
-  elseif(DEVICE STREQUAL "pico2")
-      set(PICO_BOARD pico2 CACHE STRING "Board type" FORCE)
-  else()
-      message(FATAL_ERROR "Unknown DEVICE='${DEVICE}'. Use pico2 or xiao.")
-  endif()
-
+if(PICO_UART_COMMS_STANDALONE)
     set(FREERTOS_KERNEL_PATH
         ${CMAKE_CURRENT_LIST_DIR}/lib/FreeRTOS-Kernel
     )
